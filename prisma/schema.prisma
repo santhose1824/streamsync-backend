@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  role           String          @default("user")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  refreshTokens  RefreshToken[]
+  fcmTokens      FcmToken[]
+  notifications  Notification[]
+  progress       VideoProgress[]
+  favorites      Favorite[]
+  pendingActions PendingAction[] // Added this line
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+}
+
+model FcmToken {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique
+  platform  String?  // "android" | "ios"
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  title      String
+  body       String
+  metadata   Json?
+  receivedAt DateTime? // when client received it
+  isRead     Boolean   @default(false)
+  isDeleted  Boolean   @default(false)
+  sent       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+model Video {
+  id           String          @id @default(uuid())
+  videoId      String          @unique // YouTube video id or canonical id
+  title        String
+  description  String?
+  thumbnailUrl String?
+  channelId    String?
+  publishedAt  DateTime?
+  durationSec  Int?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  progress     VideoProgress[]
+  favorites    Favorite[]
+}
+
+model VideoProgress {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  video        Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId      String
+  positionSec  Int
+  completedPct Int?
+  updatedAt    DateTime @default(now())
+  synced       Boolean  @default(false)
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId   String
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
+}
+
+model PendingAction {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  actionType String   // e.g., "progress_update", "favorite_add", "notification_delete"
+  payload    Json
+  createdAt  DateTime @default(now())
+  processed  Boolean  @default(false)
+}
