@@ -105,6 +105,19 @@ CREATE TABLE "PendingAction" (
     CONSTRAINT "PendingAction_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "AuthAudit" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "eventType" TEXT NOT NULL,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "meta" JSONB NOT NULL DEFAULT '{}',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuthAudit_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -116,6 +129,12 @@ CREATE UNIQUE INDEX "FcmToken_token_key" ON "FcmToken"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Video_videoId_key" ON "Video"("videoId");
+
+-- CreateIndex
+CREATE INDEX "AuthAudit_userId_idx" ON "AuthAudit"("userId");
+
+-- CreateIndex
+CREATE INDEX "AuthAudit_eventType_idx" ON "AuthAudit"("eventType");
 
 -- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -140,3 +159,6 @@ ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_videoId_fkey" FOREIGN KEY ("vide
 
 -- AddForeignKey
 ALTER TABLE "PendingAction" ADD CONSTRAINT "PendingAction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuthAudit" ADD CONSTRAINT "AuthAudit_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

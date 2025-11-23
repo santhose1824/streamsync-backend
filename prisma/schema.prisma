@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -20,7 +21,8 @@ model User {
   notifications  Notification[]
   progress       VideoProgress[]
   favorites      Favorite[]
-  pendingActions PendingAction[] // Added this line
+  pendingActions PendingAction[]
+  authAudits     AuthAudit[]     // Added this line
 }
 
 model RefreshToken {
@@ -103,4 +105,18 @@ model PendingAction {
   payload    Json
   createdAt  DateTime @default(now())
   processed  Boolean  @default(false)
+}
+
+model AuthAudit {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  eventType String   // "login_success", "login_failed", "password_change", etc.
+  ipAddress String?
+  userAgent String?
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
 }
