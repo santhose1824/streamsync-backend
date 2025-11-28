@@ -7,3 +7,4 @@ dist/
 /src/generated/prisma
 
 /src/generated/prisma
+/firebase-service-account.json
