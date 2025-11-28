@@ -18,7 +18,7 @@ app.use('/', authRoutes);
 // error handler (last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+const PORT = parseInt(process.env.PORT || '4000', 10);
+app.listen(PORT,"0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
