@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import fcmRoutes from './routes/fcmRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -14,6 +15,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // API routes
 app.use('/', authRoutes);
+app.use('/', fcmRoutes);
 
 // error handler (last)
 app.use(errorHandler);
