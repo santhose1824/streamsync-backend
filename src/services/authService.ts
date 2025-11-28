@@ -143,11 +143,19 @@ export async function changePassword(userId: string, currentPassword: string, ne
 }
 
 export async function deleteUser(userId: string) {
-  // soft delete: set deletedAt
-  await prisma.user.update({ where: { id: userId }, data: { deletedAt: new Date() } });
-
-  // revoke refresh tokens
-  await prisma.refreshToken.updateMany({ where: { userId }, data: { revokedAt: new Date() } });
+  // Hard delete: remove user and related data from database
+  // Note: This assumes cascade delete is NOT configured in your schema
+  // If you have onDelete: Cascade in your Prisma schema, you only need to delete the user
+  
+  // Delete related data first (if no cascade delete configured)
+  await prisma.refreshToken.deleteMany({ where: { userId } });
+  
+  // Add any other related deletions here, for example:
+  // await prisma.post.deleteMany({ where: { authorId: userId } });
+  // await prisma.comment.deleteMany({ where: { authorId: userId } });
+  
+  // Finally, delete the user
+  await prisma.user.delete({ where: { id: userId } });
 
   return;
 }
