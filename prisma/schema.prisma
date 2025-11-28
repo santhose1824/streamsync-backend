@@ -22,7 +22,7 @@ model User {
   progress       VideoProgress[]
   favorites      Favorite[]
   pendingActions PendingAction[]
-  authAudits     AuthAudit[]     // Added this line
+  authAudits     AuthAudit[]
 }
 
 model RefreshToken {
@@ -42,27 +42,49 @@ model FcmToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   token     String   @unique
-  platform  String?  // "android" | "ios"
+  platform  String? // "android" | "ios"
   createdAt DateTime @default(now())
 }
 
 model Notification {
-  id         String    @id @default(uuid())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  title      String
-  body       String
-  metadata   Json?
-  receivedAt DateTime? // when client received it
-  isRead     Boolean   @default(false)
-  isDeleted  Boolean   @default(false)
-  sent       Boolean   @default(false)
-  createdAt  DateTime  @default(now())
+  id             String    @id @default(uuid())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  title          String
+  body           String
+  metadata       Json?
+  idempotencyKey String?   @db.VarChar(191)
+  receivedAt     DateTime?
+  isRead         Boolean   @default(false)
+  isDeleted      Boolean   @default(false)
+  sent           Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  // One-to-one to NotificationJob (optional — job may be created after notification)
+  job NotificationJob? @relation("NotificationToJob")
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model NotificationJob {
+  id             String       @id @default(uuid())
+  notification   Notification @relation("NotificationToJob", fields: [notificationId], references: [id], onDelete: Cascade)
+  notificationId String       @unique
+  status         String       @default("pending") // pending | processing | sent | failed
+  retries        Int          @default(0)
+  lastError      String?
+  processingAt   DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Video {
   id           String          @id @default(uuid())
-  videoId      String          @unique // YouTube video id or canonical id
+  videoId      String          @unique
   title        String
   description  String?
   thumbnailUrl String?
@@ -85,6 +107,8 @@ model VideoProgress {
   completedPct Int?
   updatedAt    DateTime @default(now())
   synced       Boolean  @default(false)
+
+  @@index([userId, videoId])
 }
 
 model Favorite {
@@ -95,13 +119,15 @@ model Favorite {
   videoId   String
   createdAt DateTime @default(now())
   synced    Boolean  @default(false)
+
+  @@index([userId, videoId])
 }
 
 model PendingAction {
   id         String   @id @default(uuid())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
-  actionType String   // e.g., "progress_update", "favorite_add", "notification_delete"
+  actionType String
   payload    Json
   createdAt  DateTime @default(now())
   processed  Boolean  @default(false)
@@ -111,7 +137,7 @@ model AuthAudit {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  eventType String   // "login_success", "login_failed", "password_change", etc.
+  eventType String
   ipAddress String?
   userAgent String?
   meta      Json     @default("{}")
