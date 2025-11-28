@@ -44,6 +44,7 @@ CREATE TABLE "Notification" (
     "title" TEXT NOT NULL,
     "body" TEXT NOT NULL,
     "metadata" JSONB,
+    "idempotencyKey" VARCHAR(191),
     "receivedAt" TIMESTAMP(3),
     "isRead" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -51,6 +52,20 @@ CREATE TABLE "Notification" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NotificationJob" (
+    "id" TEXT NOT NULL,
+    "notificationId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "retries" INTEGER NOT NULL DEFAULT 0,
+    "lastError" TEXT,
+    "processingAt" TIMESTAMP(3),
+    "sentAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "NotificationJob_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -128,7 +143,28 @@ CREATE UNIQUE INDEX "RefreshToken_token_key" ON "RefreshToken"("token");
 CREATE UNIQUE INDEX "FcmToken_token_key" ON "FcmToken"("token");
 
 -- CreateIndex
+CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
+
+-- CreateIndex
+CREATE INDEX "Notification_createdAt_idx" ON "Notification"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NotificationJob_notificationId_key" ON "NotificationJob"("notificationId");
+
+-- CreateIndex
+CREATE INDEX "NotificationJob_status_idx" ON "NotificationJob"("status");
+
+-- CreateIndex
+CREATE INDEX "NotificationJob_createdAt_idx" ON "NotificationJob"("createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Video_videoId_key" ON "Video"("videoId");
+
+-- CreateIndex
+CREATE INDEX "VideoProgress_userId_videoId_idx" ON "VideoProgress"("userId", "videoId");
+
+-- CreateIndex
+CREATE INDEX "Favorite_userId_videoId_idx" ON "Favorite"("userId", "videoId");
 
 -- CreateIndex
 CREATE INDEX "AuthAudit_userId_idx" ON "AuthAudit"("userId");
@@ -144,6 +180,9 @@ ALTER TABLE "FcmToken" ADD CONSTRAINT "FcmToken_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "NotificationJob" ADD CONSTRAINT "NotificationJob_notificationId_fkey" FOREIGN KEY ("notificationId") REFERENCES "Notification"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "VideoProgress" ADD CONSTRAINT "VideoProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

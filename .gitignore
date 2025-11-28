@@ -1,9 +1,7 @@
+firebase-service-account.json
+/src/generated/prisma
+.env
 node_modules/
 dist/
-.env
 .DS_Store
 *.log
-
-/src/generated/prisma
-
-/src/generated/prisma
